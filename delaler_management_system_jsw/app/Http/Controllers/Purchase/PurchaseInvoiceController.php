@@ -493,7 +493,7 @@ class PurchaseInvoiceController extends Controller
             $companyId = session('active_company_id');
             $purchase = PurchaseInvoice::where('company_id', $companyId)
                 ->where('id', $decryptedId)
-                ->with(['supplier', 'purchaseInvoiceDetails.product', 'purchaseInvoicePayment', 'purchasePaymentTracks'])
+                ->with(['supplier', 'company', 'purchaseInvoiceDetails.product', 'purchaseInvoicePayment', 'purchasePaymentTracks'])
                 ->firstOrFail();
 
             return view('purchase.invoices.view', compact('purchase'));

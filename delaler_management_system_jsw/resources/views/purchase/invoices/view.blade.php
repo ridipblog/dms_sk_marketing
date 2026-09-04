@@ -23,16 +23,25 @@
                     <div class="card-body p-4">
                         <!-- Invoice Header details -->
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h6 class="text-muted fw-bold">SUPPLIER (BILL FROM)</h6>
-                                <h5 class="fw-bold text-dark mb-1">{{ $purchase->supplier->name }}</h5>
+                                <h5 class="fw-bold text-dark mb-1">{{ $purchase->supplier->name ?? 'N/A' }}</h5>
                                 <p class="text-muted mb-0 small">
                                     <strong>GSTIN:</strong> {{ $purchase->supplier->gstin ?? 'N/A' }}<br>
                                     <strong>Phone:</strong> {{ $purchase->supplier->phone ?? 'N/A' }}<br>
                                     <strong>Address:</strong> {{ $purchase->supplier->address ?? 'N/A' }}
                                 </p>
                             </div>
-                            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="col-md-4 mt-3 mt-md-0">
+                                <h6 class="text-muted fw-bold">COMPANY (SHIP TO)</h6>
+                                <h5 class="fw-bold text-dark mb-1">{{ $purchase->company->company_name ?? 'N/A' }}</h5>
+                                <p class="text-muted mb-0 small">
+                                    <strong>GSTIN:</strong> {{ $purchase->company->gst_no ?? 'N/A' }}<br>
+                                    <strong>Phone:</strong> {{ $purchase->company->phone ?? 'N/A' }}<br>
+                                    <strong>Address:</strong> {{ $purchase->company->address ?? 'N/A' }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
                                 @if (!empty($purchase->user_invoice_no))
                                     <h4 class="fw-bold text-success mb-1">{{ $purchase->user_invoice_no }}</h4>
                                     <div class="text-secondary fw-semibold small mb-1">Ref: {{ $purchase->invoice_no }}</div>
