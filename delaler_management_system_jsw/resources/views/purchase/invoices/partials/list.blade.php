@@ -24,8 +24,13 @@
                 <tr>
                     <td class="ps-4 text-muted fw-bold">{{ $invoices->firstItem() + $index }}</td>
                     <td>
-                        <span class="fw-bold text-success">{{ $invoice->invoice_no }}</span><br>
-                        <small class="text-muted fw-semibold"><i class="far fa-calendar-alt me-1"></i>{{ \Carbon\Carbon::parse($invoice->purchase_date)->format('d M Y') }}</small>
+                        @if (!empty($invoice->user_invoice_no))
+                            <span class="fw-bold text-success">{{ $invoice->user_invoice_no }}</span>
+                            <br><small class="text-secondary fw-semibold">Ref: {{ $invoice->invoice_no }}</small>
+                        @else
+                            <span class="fw-bold text-success">{{ $invoice->invoice_no }}</span>
+                        @endif
+                        <br><small class="text-muted fw-semibold"><i class="far fa-calendar-alt me-1"></i>{{ \Carbon\Carbon::parse($invoice->purchase_date)->format('d M Y') }}</small>
                     </td>
                     <td>
                         <div class="fw-bold text-dark">{{ $invoice->supplier->name ?? 'N/A' }}</div>

@@ -33,7 +33,12 @@
                                 </p>
                             </div>
                             <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                                <h4 class="fw-bold text-success mb-1">{{ $purchase->invoice_no }}</h4>
+                                @if (!empty($purchase->user_invoice_no))
+                                    <h4 class="fw-bold text-success mb-1">{{ $purchase->user_invoice_no }}</h4>
+                                    <div class="text-secondary fw-semibold small mb-1">Ref: {{ $purchase->invoice_no }}</div>
+                                @else
+                                    <h4 class="fw-bold text-success mb-1">{{ $purchase->invoice_no }}</h4>
+                                @endif
                                 <p class="text-muted mb-2 small">
                                     <strong>Purchase Date:</strong> {{ $purchase->purchase_date->format('d M Y') }}<br>
                                     <strong>Due Date:</strong> {{ $purchase->due_date ? $purchase->due_date->format('d M Y') : 'N/A' }}
