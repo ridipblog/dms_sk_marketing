@@ -1,0 +1,216 @@
+/* JSW Dealer Management System Dashboard Styles */
+
+.dashboard-container {
+    background-color: #f4f6f9;
+    min-height: calc(100vh - 60px);
+}
+
+/* Metric Cards & JSW Colors */
+.metric-card {
+    border-radius: 12px;
+    border: none !important;
+    position: relative;
+    overflow: hidden;
+    color: white !important;
+    z-index: 1;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(15, 76, 129, 0.2) !important;
+}
+
+.metric-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 120px;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 100%);
+    z-index: -1;
+    transform: skewX(-20deg) translateX(40px);
+    transition: transform 0.6s ease;
+}
+
+.metric-card:hover::after {
+    transform: skewX(-20deg) translateX(-180%);
+}
+
+.metric-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Premium JSW Color System */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #0f4c81 0%, #1e3a8a 100%) !important; /* JSW Blue */
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%) !important;
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%) !important;
+}
+
+.bg-gradient-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+}
+
+/* Filters and Panels */
+.filter-card {
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.02) !important;
+}
+
+.form-label-xs {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 3px;
+}
+
+.form-select-sm, .form-control-sm {
+    font-size: 0.76rem;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #dcdfe6;
+    padding-left: 10px;
+    color: #4a4a4a;
+    transition: border-color 0.2s;
+}
+
+.form-select-sm:focus, .form-control-sm:focus {
+    border-color: #0f4c81;
+    box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.1);
+}
+
+/* Typography and Labels */
+.kpi-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.9;
+}
+
+.kpi-value {
+    font-weight: 800;
+    font-size: 1.65rem;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+}
+
+.text-xs {
+    font-size: 0.72rem;
+}
+
+/* Table Style Upgrades */
+.table-responsive {
+    border-radius: 12px;
+}
+
+.table th {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    padding: 0.85rem 1rem !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.table td {
+    font-size: 0.82rem;
+    padding: 0.75rem 1rem !important;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.table tr:last-child td {
+    border-bottom: none !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Gauges and Custom Elements */
+.credit-gauge-percentage {
+    background: rgba(15, 76, 129, 0.08);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem !important;
+}
+
+.progress {
+    border-radius: 10px;
+    background-color: #e2e8f0;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+.vr {
+    width: 1px;
+    background-color: #cbd5e1;
+    opacity: 0.8;
+}
+
+/* Badges Statuses */
+.badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.7rem;
+    border-radius: 6px;
+}
+
+.badge.bg-success.bg-opacity-10 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.badge.bg-warning.bg-opacity-10 {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    color: #d97706 !important;
+    border: 1px solid rgba(245, 158, 11, 0.2) !important;
+}
+
+.badge.bg-danger.bg-opacity-10 {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.badge.bg-primary.bg-opacity-10 {
+    background-color: rgba(15, 76, 129, 0.1) !important;
+    color: #0f4c81 !important;
+    border: 1px solid rgba(15, 76, 129, 0.2) !important;
+}
+
+.badge.bg-muted.bg-opacity-10 {
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    color: #64748b !important;
+    border: 1px solid rgba(100, 116, 139, 0.2) !important;
+}

@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #4F46E5;
+    --primary-gradient: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+    --bg-color: #F8FAFC;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-sm: 4px;
+    --transition-speed: 0.2s;
+}
+
+body {
+    font-family: 'Outfit', sans-serif !important;
+    background-color: var(--bg-color) !important;
+    color: #334155;
+    font-size: 0.85rem !important; /* Smaller base text */
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.5rem !important;
+}
+
+h4 { font-size: 1.15rem !important; }
+h5 { font-size: 1rem !important; }
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.bg-primary {
+    background: var(--primary-gradient) !important;
+}
+
+/* Utilities */
+.mb-4 {
+    margin-bottom: 1rem !important; /* Override mb-4 to be tighter globally */
+}
+.p-4 {
+    padding: 1.25rem !important; /* Override p-4 */
+}

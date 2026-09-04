@@ -1,0 +1,29 @@
+/* Premium Compact CSS Overrides for JSW Dealer Management System */
+
+@import 'premium/base.css';
+@import 'premium/components.css';
+@import 'premium/layout.css';
+
+/* Very small font size and box size for Select2 and form text */
+.select2-container--bootstrap-5 .select2-selection,
+.select2-results__option,
+.select2-search__field,
+.select2-selection__placeholder,
+.select2-selection__rendered {
+    font-size: 0.75rem !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 30px !important;
+    padding: 0.2rem 0.5rem !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 22px !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+    height: 28px !important;
+}

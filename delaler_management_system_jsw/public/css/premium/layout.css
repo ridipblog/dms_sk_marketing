@@ -1,0 +1,93 @@
+/* Navbar */
+.navbar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+    padding: 0.5rem 1rem !important; /* Compact navbar */
+    z-index: 1050 !important; /* Ensure dropdowns appear above backdrop-filter cards */
+    position: relative;
+}
+.navbar-brand {
+    font-size: 1rem !important;
+}
+
+/* Sidebar styling overrides */
+#sidebar-wrapper {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-right: 1px solid #E2E8F0;
+}
+.list-group-item {
+    transition: all var(--transition-speed) ease;
+    border-radius: var(--border-radius-sm) !important;
+    margin: 2px 8px !important; /* Tighter sidebar spacing */
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+    width: auto !important;
+}
+.list-group-item.text-primary.fw-bold {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.15) !important;
+    border-left: none !important;
+}
+.list-group-item.text-primary.fw-bold i {
+    color: white !important;
+}
+.list-group-item:not(.text-primary):hover {
+    background-color: #F1F5F9 !important;
+    transform: translateX(2px);
+}
+
+/* Sidebar Submenu Arrow Rotation */
+.collapse-icon {
+    transition: transform var(--transition-speed) ease;
+}
+[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+}
+
+/* Submenu Folder Structure Design */
+.submenu-tree {
+    border-left: 2px solid #E2E8F0;
+    margin-left: 1.5rem;
+    padding-left: 0.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+.submenu-item {
+    border: none !important;
+    background: transparent !important;
+    padding: 0.4rem 1rem !important;
+    font-size: 0.8rem !important;
+    border-radius: var(--border-radius-sm) !important;
+    margin: 2px 0 !important;
+    position: relative;
+    box-shadow: none !important;
+}
+/* Folder tree horizontal lines */
+.submenu-item::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem; /* Connects exactly to the vertical border */
+    top: 50%;
+    width: 0.5rem;
+    height: 2px;
+    background-color: #E2E8F0;
+    transition: background-color var(--transition-speed) ease;
+}
+.submenu-item:hover {
+    color: var(--primary-color) !important;
+    background-color: rgba(79, 70, 229, 0.05) !important;
+    transform: translateX(2px);
+}
+.submenu-item:hover::before {
+    background-color: #818CF8;
+}
+.submenu-item.active-submenu {
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+    background-color: rgba(79, 70, 229, 0.1) !important;
+}
+.submenu-item.active-submenu::before {
+    background-color: var(--primary-color);
+}
