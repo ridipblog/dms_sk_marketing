@@ -12,8 +12,8 @@ $(document).ready(function () {
     reusebase.initSelect2("#ship_to", "Choose Ship To...");
     reusebase.initSelect2("#product_pricing_id", "Choose Product...");
 
-    // Calculate Rate fields when Product, Custom Price, Quantity, or Invoice GST is changed
-    $(document).on("change keyup input", "#product_pricing_id, #custom_price, #quantity, #gst", function () {
+    // Calculate Rate fields when Product, Custom Price, Quantity, Invoice GST, or Tax Type is changed
+    $(document).on("change keyup input", "#product_pricing_id, #custom_price, #quantity, #gst, #tax_type", function () {
         try {
             let selectedOption = $("#product_pricing_id").find("option:selected");
             let customPriceInput = $("#custom_price").val();
@@ -56,7 +56,7 @@ $(document).ready(function () {
     // Handle dynamic calculation for Edit Items
     $(document).on(
         "change keyup input",
-        ".edit-product-id, .edit-price, .edit-quantity, #gst",
+        ".edit-product-id, .edit-price, .edit-quantity, #gst, #tax_type",
         function () {
             try {
                 let form = $(this).closest("form");

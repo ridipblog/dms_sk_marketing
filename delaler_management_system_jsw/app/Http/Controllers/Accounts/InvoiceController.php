@@ -277,6 +277,7 @@ class InvoiceController extends Controller
                 'user_invoice_no' => 'nullable|string|max:255',
                 'buyer_id' => 'required|exists:dealer_companies,id',
                 'ship_to' => 'required|exists:dealer_companies,id',
+                'tax_type' => 'nullable|in:intra,inter',
                 'gst' => 'required|numeric|min:0',
                 'invoice_generate_date' => 'nullable|date',
                 'vehicle_no' => 'nullable|string|max:255',
@@ -293,14 +294,18 @@ class InvoiceController extends Controller
             }
 
             $userInvoiceNo = $request->filled('user_invoice_no') ? trim($request->user_invoice_no) : null;
+            $taxType = $request->tax_type ?? 'intra';
+            $isInterState = ($taxType === 'inter');
 
             $data = [
                 'user_invoice_no' => $userInvoiceNo,
                 'buyer_id' => $request->buyer_id,
                 'ship_to' => $request->ship_to,
+                'tax_type' => $taxType,
                 'gst' => $request->gst,
-                'cgst' => $request->gst / 2,
-                'sgst' => $request->gst / 2,
+                'cgst' => $isInterState ? 0 : ($request->gst / 2),
+                'sgst' => $isInterState ? 0 : ($request->gst / 2),
+                'igst' => $isInterState ? $request->gst : 0,
                 'invoice_generate_date' => $request->invoice_generate_date ?? now()->format('Y-m-d'),
                 'vehicle_no' => $request->vehicle_no,
                 'delivery_note' => $request->delivery_note,
@@ -314,19 +319,20 @@ class InvoiceController extends Controller
                     return response()->json(['success' => false, 'message' => 'Cannot update a finalized invoice.']);
                 }
 
-                // Recalculate existing items if GST percentage is updated in Invoice Details
+                // Recalculate existing items if GST percentage or tax type is updated
                 $details = $invoice->invoiceDetails;
                 if ($details && $details->count() > 0) {
                     foreach ($details as $detail) {
                         $rate = (float)($detail->custom_price ?? ($detail->productPricing ? $detail->productPricing->price_per_mt : 0));
                         $quantity = (float)$detail->quantity;
-                        $itemAmounts = ReuseModule::calculateItemAmounts($rate, $quantity, (float)$request->gst);
+                        $itemAmounts = ReuseModule::calculateItemAmounts($rate, $quantity, (float)$request->gst, $taxType);
 
                         $detail->update([
                             'total_amount' => $itemAmounts['total_amount'],
                             'gst_amount' => $itemAmounts['gst_amount'],
                             'cgst_amount' => $itemAmounts['cgst_amount'],
                             'sgst_amount' => $itemAmounts['sgst_amount'],
+                            'igst_amount' => $itemAmounts['igst_amount'],
                             'chargeable_amount' => $itemAmounts['chargeable_amount']
                         ]);
                     }
@@ -334,9 +340,10 @@ class InvoiceController extends Controller
                     $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
                     $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
                     $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                    $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
                     $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
 
-                    $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                    $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
                     $finalRoundedAmount = round($unroundedTotal);
                     $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
 
@@ -345,6 +352,7 @@ class InvoiceController extends Controller
                     $data['total_gst_amount'] = $totGst;
                     $data['total_cgst_amount'] = $totCgst;
                     $data['total_sgst_amount'] = $totSgst;
+                    $data['total_igst_amount'] = $totIgst;
                     $data['round_of'] = $roundOff;
                     $data['chargeable_amount'] = $finalRoundedAmount;
                     $data['no_of_goods'] = $invoice->invoiceDetails()->count();
@@ -490,8 +498,9 @@ class InvoiceController extends Controller
             }
             $quantity = $request->quantity;
             $gst_percent = (float)($invoice->gst ?? 18);
+            $taxType = $invoice->tax_type ?? 'intra';
 
-            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent);
+            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent, $taxType);
 
             DB::transaction(function () use ($invoice, $invoice_detail_id, $productPricing, $rate, $quantity, $amounts) {
 
@@ -512,6 +521,7 @@ class InvoiceController extends Controller
                     'gst_amount' => $amounts['gst_amount'],
                     'cgst_amount' => $amounts['cgst_amount'],
                     'sgst_amount' => $amounts['sgst_amount'],
+                    'igst_amount' => $amounts['igst_amount'],
                     'chargeable_amount' => $amounts['chargeable_amount']
                 ]);
 
@@ -521,9 +531,10 @@ class InvoiceController extends Controller
                 $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
                 $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
                 $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
                 $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
 
-                $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
                 $finalRoundedAmount = round($unroundedTotal);
                 $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
 
@@ -532,6 +543,7 @@ class InvoiceController extends Controller
                 $invoice->total_gst_amount = $totGst;
                 $invoice->total_cgst_amount = $totCgst;
                 $invoice->total_sgst_amount = $totSgst;
+                $invoice->total_igst_amount = $totIgst;
                 $invoice->round_of = $roundOff;
                 $invoice->chargeable_amount = $finalRoundedAmount;
                 $invoice->no_of_goods = $invoice->invoiceDetails()->count();
@@ -590,9 +602,10 @@ class InvoiceController extends Controller
                 $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
                 $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
                 $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
                 $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
 
-                $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
                 $finalRoundedAmount = round($unroundedTotal);
                 $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
 
@@ -601,6 +614,7 @@ class InvoiceController extends Controller
                 $invoice->total_gst_amount = $totGst;
                 $invoice->total_cgst_amount = $totCgst;
                 $invoice->total_sgst_amount = $totSgst;
+                $invoice->total_igst_amount = $totIgst;
                 $invoice->round_of = $roundOff;
                 $invoice->chargeable_amount = $finalRoundedAmount;
                 $invoice->no_of_goods = $invoice->invoiceDetails()->count();

@@ -414,24 +414,36 @@
                             <td></td>
                             <td class="fw-bold-custom text-end pt-5">
                                 <br>
-                                CGST {{ ($invoice->gst ?? 18) / 2 }}%<br>
-                                SGST {{ ($invoice->gst ?? 18) / 2 }}%<br>
+                                @if(($invoice->tax_type ?? 'intra') === 'inter')
+                                    IGST {{ $invoice->gst ?? 18 }}%<br>
+                                @else
+                                    CGST {{ ($invoice->gst ?? 18) / 2 }}%<br>
+                                    SGST {{ ($invoice->gst ?? 18) / 2 }}%<br>
+                                @endif
                                 Round Off
                             </td>
                             <td class="text-end pt-5">
                                 <br>
-                                {{ ($invoice->gst ?? 18) / 2 }} %<br>
-                                {{ ($invoice->gst ?? 18) / 2 }} %
+                                @if(($invoice->tax_type ?? 'intra') === 'inter')
+                                    {{ $invoice->gst ?? 18 }} %<br>
+                                @else
+                                    {{ ($invoice->gst ?? 18) / 2 }} %<br>
+                                    {{ ($invoice->gst ?? 18) / 2 }} %
+                                @endif
                             </td>
                             <td class="text-end fw-bold-custom pt-5 border-bottom-black">
                                 {{ inr($invoice->total_amount) }}<br>
-                                {{ inr($invoice->total_cgst_amount) }}<br>
-                                {{ inr($invoice->total_sgst_amount) }}<br>
+                                @if(($invoice->tax_type ?? 'intra') === 'inter')
+                                    {{ inr($invoice->total_igst_amount ?? $invoice->total_gst_amount) }}<br>
+                                @else
+                                    {{ inr($invoice->total_cgst_amount) }}<br>
+                                    {{ inr($invoice->total_sgst_amount) }}<br>
+                                @endif
                                 @php
                                     if (isset($invoice->round_of) && $invoice->round_of !== null) {
                                         $roundOff = (float)$invoice->round_of;
                                     } else {
-                                        $calculatedTotal = $invoice->total_amount + $invoice->total_cgst_amount + $invoice->total_sgst_amount;
+                                        $calculatedTotal = $invoice->total_amount + ($invoice->tax_type === 'inter' ? ($invoice->total_igst_amount ?? $invoice->total_gst_amount) : ($invoice->total_cgst_amount + $invoice->total_sgst_amount));
                                         $finalRoundedAmount = round($calculatedTotal);
                                         $roundOff = $finalRoundedAmount - $calculatedTotal;
                                     }
@@ -465,42 +477,74 @@
                 </div>
 
                 <!-- Tax Summary Table -->
+                @php
+                    $isInter = ($invoice->tax_type ?? 'intra') === 'inter';
+                @endphp
                 <table class="table-custom border-top-0 border-start-0 border-end-0">
                     <thead>
-                        <tr>
-                            <th rowspan="2" class="text-center align-middle" width="30%">HSN/SAC</th>
-                            <th rowspan="2" class="text-center align-middle" width="15%">Taxable Value</th>
-                            <th colspan="2" class="text-center border-bottom-black">CGST</th>
-                            <th colspan="2" class="text-center border-bottom-black">SGST/UTGST</th>
-                            <th rowspan="2" class="text-center align-middle" width="15%">Total Tax Amount</th>
-                        </tr>
-                        <tr>
-                            <th class="text-center">Rate</th>
-                            <th class="text-center">Amount</th>
-                            <th class="text-center">Rate</th>
-                            <th class="text-center">Amount</th>
-                        </tr>
+                        @if($isInter)
+                            <tr>
+                                <th rowspan="2" class="text-center align-middle" width="40%">HSN/SAC</th>
+                                <th rowspan="2" class="text-center align-middle" width="20%">Taxable Value</th>
+                                <th colspan="2" class="text-center border-bottom-black">IGST</th>
+                                <th rowspan="2" class="text-center align-middle" width="20%">Total Tax Amount</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center">Rate</th>
+                                <th class="text-center">Amount</th>
+                            </tr>
+                        @else
+                            <tr>
+                                <th rowspan="2" class="text-center align-middle" width="30%">HSN/SAC</th>
+                                <th rowspan="2" class="text-center align-middle" width="15%">Taxable Value</th>
+                                <th colspan="2" class="text-center border-bottom-black">CGST</th>
+                                <th colspan="2" class="text-center border-bottom-black">SGST/UTGST</th>
+                                <th rowspan="2" class="text-center align-middle" width="15%">Total Tax Amount</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center">Rate</th>
+                                <th class="text-center">Amount</th>
+                                <th class="text-center">Rate</th>
+                                <th class="text-center">Amount</th>
+                            </tr>
+                        @endif
                     </thead>
                     <tbody>
-                        <!-- Normally grouped by HSN/SAC, we'll just show the totals for simplicity matching the mockup -->
-                        <tr>
-                            <td>As per Invoice Details</td>
-                            <td class="text-end">{{ inr($invoice->total_amount) }}</td>
-                            <td class="text-center">{{ ($invoice->gst ?? 18) / 2 }}%</td>
-                            <td class="text-end">{{ inr($invoice->total_cgst_amount) }}</td>
-                            <td class="text-center">{{ ($invoice->gst ?? 18) / 2 }}%</td>
-                            <td class="text-end">{{ inr($invoice->total_sgst_amount) }}</td>
-                            <td class="text-end">{{ inr($invoice->total_gst_amount) }}</td>
-                        </tr>
-                        <tr class="border-bottom-black border-top-black">
-                            <td class="text-end fw-bold-custom">Total</td>
-                            <td class="text-end fw-bold-custom">{{ inr($invoice->total_amount) }}</td>
-                            <td></td>
-                            <td class="text-end fw-bold-custom">{{ inr($invoice->total_cgst_amount) }}</td>
-                            <td></td>
-                            <td class="text-end fw-bold-custom">{{ inr($invoice->total_sgst_amount) }}</td>
-                            <td class="text-end fw-bold-custom">{{ inr($invoice->total_gst_amount) }}</td>
-                        </tr>
+                        @if($isInter)
+                            <tr>
+                                <td>As per Invoice Details</td>
+                                <td class="text-end">{{ inr($invoice->total_amount) }}</td>
+                                <td class="text-center">{{ $invoice->gst ?? 18 }}%</td>
+                                <td class="text-end">{{ inr($invoice->total_igst_amount ?? $invoice->total_gst_amount) }}</td>
+                                <td class="text-end">{{ inr($invoice->total_gst_amount) }}</td>
+                            </tr>
+                            <tr class="border-bottom-black border-top-black">
+                                <td class="text-end fw-bold-custom">Total</td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_amount) }}</td>
+                                <td></td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_igst_amount ?? $invoice->total_gst_amount) }}</td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_gst_amount) }}</td>
+                            </tr>
+                        @else
+                            <tr>
+                                <td>As per Invoice Details</td>
+                                <td class="text-end">{{ inr($invoice->total_amount) }}</td>
+                                <td class="text-center">{{ ($invoice->gst ?? 18) / 2 }}%</td>
+                                <td class="text-end">{{ inr($invoice->total_cgst_amount) }}</td>
+                                <td class="text-center">{{ ($invoice->gst ?? 18) / 2 }}%</td>
+                                <td class="text-end">{{ inr($invoice->total_sgst_amount) }}</td>
+                                <td class="text-end">{{ inr($invoice->total_gst_amount) }}</td>
+                            </tr>
+                            <tr class="border-bottom-black border-top-black">
+                                <td class="text-end fw-bold-custom">Total</td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_amount) }}</td>
+                                <td></td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_cgst_amount) }}</td>
+                                <td></td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_sgst_amount) }}</td>
+                                <td class="text-end fw-bold-custom">{{ inr($invoice->total_gst_amount) }}</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
 
