@@ -347,7 +347,7 @@ class ProcessAccountsInvoiceUpload implements ShouldQueue
                             }
 
                             $rate = $pricing->price_per_mt;
-                            $gst_percent = $pricing->gst_percentage ?? 18;
+                            $gst_percent = $invoice->gst ?? 18;
 
                             $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent);
 

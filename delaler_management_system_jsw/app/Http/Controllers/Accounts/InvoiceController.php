@@ -314,6 +314,42 @@ class InvoiceController extends Controller
                     return response()->json(['success' => false, 'message' => 'Cannot update a finalized invoice.']);
                 }
 
+                // Recalculate existing items if GST percentage is updated in Invoice Details
+                $details = $invoice->invoiceDetails;
+                if ($details && $details->count() > 0) {
+                    foreach ($details as $detail) {
+                        $rate = (float)($detail->custom_price ?? ($detail->productPricing ? $detail->productPricing->price_per_mt : 0));
+                        $quantity = (float)$detail->quantity;
+                        $itemAmounts = ReuseModule::calculateItemAmounts($rate, $quantity, (float)$request->gst);
+
+                        $detail->update([
+                            'total_amount' => $itemAmounts['total_amount'],
+                            'gst_amount' => $itemAmounts['gst_amount'],
+                            'cgst_amount' => $itemAmounts['cgst_amount'],
+                            'sgst_amount' => $itemAmounts['sgst_amount'],
+                            'chargeable_amount' => $itemAmounts['chargeable_amount']
+                        ]);
+                    }
+
+                    $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
+                    $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
+                    $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                    $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
+
+                    $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                    $finalRoundedAmount = round($unroundedTotal);
+                    $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
+
+                    $data['total_quantity'] = $invoice->invoiceDetails()->sum('quantity');
+                    $data['total_amount'] = $totAmount;
+                    $data['total_gst_amount'] = $totGst;
+                    $data['total_cgst_amount'] = $totCgst;
+                    $data['total_sgst_amount'] = $totSgst;
+                    $data['round_of'] = $roundOff;
+                    $data['chargeable_amount'] = $finalRoundedAmount;
+                    $data['no_of_goods'] = $invoice->invoiceDetails()->count();
+                }
+
                 $invoice->update($data);
                 $message = 'Invoice updated successfully.';
             } else {
@@ -453,7 +489,7 @@ class InvoiceController extends Controller
                 $rate = (float)$productPricing->price_per_mt;
             }
             $quantity = $request->quantity;
-            $gst_percent = $product->gst ?? $productPricing->gst_percentage ?? 18;
+            $gst_percent = (float)($invoice->gst ?? 18);
 
             $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent);
 

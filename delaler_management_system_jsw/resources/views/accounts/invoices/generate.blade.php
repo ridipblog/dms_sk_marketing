@@ -156,7 +156,7 @@
                                                 @foreach ($products as $productPricing)
                                                     <option value="{{ $productPricing->id ?? null }}"
                                                         data-price="{{ $productPricing->price_per_mt ?? 0 }}"
-                                                        data-gst="{{ $productPricing->product->gst ?? $productPricing->gst_percentage ?? 18 }}"
+                                                        data-gst="{{ $invoice->gst ?? 18 }}"
                                                         data-stock="{{ $productPricing->product->stock_quantity ?? 0 }}">
                                                         {{ $productPricing->product->product_name ?? 'Unknown Product' }}
                                                         (₹{{ $productPricing->price_per_mt ?? 0 }}/MT)
