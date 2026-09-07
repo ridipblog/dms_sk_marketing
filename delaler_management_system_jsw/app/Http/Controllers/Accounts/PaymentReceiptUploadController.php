@@ -70,14 +70,25 @@ class PaymentReceiptUploadController extends Controller
     public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'excel_file' => 'required|file|mimes:csv,xlsx,xls|max:10240',
+            'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first()
-            ]);
+            // Extension fallback check if MIME type detection varies on Windows/Excel CSV
+            if ($request->hasFile('excel_file')) {
+                $ext = strtolower($request->file('excel_file')->getClientOriginalExtension());
+                if (!in_array($ext, ['csv', 'xlsx', 'xls', 'txt'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The uploaded file must be a file of type: csv, xlsx, xls.'
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ]);
+            }
         }
 
         try {

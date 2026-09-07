@@ -165,7 +165,7 @@ class ProcessPaymentReceiptUpload implements ShouldQueue
                             'invoice_id' => $invoice->id,
                             'outstanding_amount' => $invoice->chargeable_amount > 0 ? $invoice->chargeable_amount : 0,
                             'paid_amount' => 0.00,
-                            'clear_status' => 0
+                            'clear_status' => 'pending payment'
                         ]);
                     }
 
@@ -283,10 +283,10 @@ class ProcessPaymentReceiptUpload implements ShouldQueue
                     }
 
                     // 3. Update Clearance Status
-                    if ($invoicePayment->outstanding_amount <= 0) {
-                        $invoicePayment->clear_status = 1;
+                    if ($invoicePayment->outstanding_amount <= 0.01) {
+                        $invoicePayment->clear_status = 'clear payment';
                     } else {
-                        $invoicePayment->clear_status = 0;
+                        $invoicePayment->clear_status = 'pending payment';
                     }
                     $invoicePayment->save();
 
