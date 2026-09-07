@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use App\Modules\ReuseModule;
+use App\Models\UploadTrack;
+use App\Jobs\ProcessCompanyWiseInvoiceUpload;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 
 class InvoiceController extends Controller
 {
@@ -995,4 +999,135 @@ class InvoiceController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to delete invoice.'], 500);
         }
     }
+
+    /**
+     * Display Company-Wise Invoice Upload submodule view.
+     */
+    public function companyWiseUploadIndex()
+    {
+        return view('accounts.invoices.company_wise_upload');
+    }
+
+    /**
+     * List recent Company-Wise Invoice Upload tracks via AJAX.
+     */
+    public function companyWiseUploadList(Request $request)
+    {
+        try {
+            $query = UploadTrack::where('upload_type', 'accounts_invoices')
+                ->with('user');
+
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where('file_name', 'like', "%{$search}%");
+            }
+
+            $page = $request->input('page', 1);
+            $tracks = $query->latest()->paginate(10, ['*'], 'page', $page);
+
+            $html = view('accounts.invoices.partials.company_wise_upload_table', compact('tracks'))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Company-Wise Invoice Upload Track List Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while loading the upload tracking list.',
+                'html' => '<div class="alert alert-danger mx-3 my-3">Failed to load data. Please try again.</div>'
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle Company-Wise Invoices Upload import.
+     */
+    public function importCompanyWiseInvoices(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ], 200);
+            }
+
+            $file = $request->file('excel_file');
+            $originalName = $file->getClientOriginalName();
+
+            // Store the file securely
+            $path = $file->storeAs('accounts_uploads', time() . '_company_wise_' . $originalName, 'local');
+
+            $track = UploadTrack::create([
+                'user_id' => Auth::id(),
+                'company_id' => session('active_company_id'),
+                'role_user_company_id' => session('active_map_id'),
+                'file_name' => $originalName,
+                'status' => 'pending',
+                'upload_type' => 'accounts_invoices'
+            ]);
+
+            // Dispatch Company-Wise Invoice Upload Queue Job
+            ProcessCompanyWiseInvoiceUpload::dispatch($track->id, $path);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Company-Wise Invoice file uploaded successfully. Processing will continue in the background.'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Company-Wise Invoice File Upload Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while uploading the file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download Template for Company-Wise Invoice Upload.
+     */
+    public function downloadCompanyWiseInvoiceTemplate()
+    {
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=company_wise_invoice_upload_template.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $columns = [
+            'Dealer GST No',
+            'User Invoice No',
+            'Invoice Date',
+            'Product Name',
+            'Quantity',
+            'Rate (Without GST)',
+            'GST Percentage',
+            'GST Type (intra/inter)'
+        ];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            // Sample Row 1 (Product invoice item 1)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), 'JSW TMT Rebar 12mm', '10', '45000.00', '18.00', 'intra']);
+            // Sample Row 2 (Grouped with Row 1 for product item 2)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), 'JSW TMT Rebar 16mm', '5', '48000.00', '18.00', 'intra']);
+            // Sample Row 3 (Another unique user input invoice number)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0002', date('Y-m-d'), 'JSW Structural Steel', '20', '52000.00', '18.00', 'inter']);
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
 }
+

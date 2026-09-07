@@ -148,6 +148,16 @@ return [
                     ]
                 ],
                 [
+                    'title' => 'Company-Wise Upload',
+                    'route' => 'accounts.invoices.company_wise_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'accounts.invoices.company_wise_upload.list',
+                        'accounts.invoices.company_wise_upload.import',
+                        'accounts.invoices.company_wise_upload.template',
+                    ]
+                ],
+                [
                     'title' => 'Payment Receipts',
                     'route' => 'accounts.payment_tracks.index',
                     'view_routes' => ['accounts.payment_tracks.voucher'],

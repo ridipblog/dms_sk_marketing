@@ -27,6 +27,12 @@ Route::middleware(['auth'])->prefix('accounts')->group(function () {
     Route::get('/invoices/export', [InvoiceController::class, 'export'])->name('accounts.invoices.export');
     Route::get('/invoices/generate/{invoice_id?}', [InvoiceController::class, 'generate'])->name('accounts.invoices.generate');
 
+    // Company-Wise Invoice Upload Submodule
+    Route::get('/invoices/company-wise-upload', [InvoiceController::class, 'companyWiseUploadIndex'])->name('accounts.invoices.company_wise_upload.index');
+    Route::post('/invoices/company-wise-upload/list', [InvoiceController::class, 'companyWiseUploadList'])->name('accounts.invoices.company_wise_upload.list');
+    Route::post('/invoices/company-wise-upload/import', [InvoiceController::class, 'importCompanyWiseInvoices'])->name('accounts.invoices.company_wise_upload.import');
+    Route::get('/invoices/company-wise-upload/template', [InvoiceController::class, 'downloadCompanyWiseInvoiceTemplate'])->name('accounts.invoices.company_wise_upload.template');
+
     // Upload Excel
     Route::get('/upload-excel', [AccountsUploadController::class, 'index'])->name('accounts.upload.index');
     Route::post('/upload-excel/invoices/list', [AccountsUploadController::class, 'invoicesList'])->name('accounts.upload.invoices.list');
