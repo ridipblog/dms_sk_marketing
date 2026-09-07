@@ -246,12 +246,14 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                             'user_invoice_no' => $userInputInvoiceNo,
                             'buyer_id' => $dealerCompany->id,
                             'ship_to' => $dealerCompany->id,
+                            'tax_type' => 'intra',
                             'created_by' => $track->role_user_company_id,
                             'company_bank_detail_id' => $companyBankDetailId,
                             'invoice_status' => 0,
                             'gst' => 18.00,
                             'cgst' => 9.00,
                             'sgst' => 9.00,
+                            'igst' => 0.00,
                             'invoice_generate_date' => $formattedInvoiceDate,
                             'due_date' => $formattedDueDate,
                         ]);
@@ -286,6 +288,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
 
                         // Update invoice GST percentage and tax_type
                         $invoice->update([
+                            'tax_type' => $taxType,
                             'gst' => $gst_percent,
                             'cgst' => $taxType === 'inter' ? 0 : ($gst_percent / 2),
                             'sgst' => $taxType === 'inter' ? 0 : ($gst_percent / 2),
