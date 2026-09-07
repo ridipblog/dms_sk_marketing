@@ -158,6 +158,16 @@ return [
                     ]
                 ],
                 [
+                    'title' => 'Upload Payment Receipts',
+                    'route' => 'accounts.invoices.payment_receipt_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'accounts.invoices.payment_receipt_upload.list',
+                        'accounts.invoices.payment_receipt_upload.import',
+                        'accounts.invoices.payment_receipt_upload.template',
+                    ]
+                ],
+                [
                     'title' => 'Payment Receipts',
                     'route' => 'accounts.payment_tracks.index',
                     'view_routes' => ['accounts.payment_tracks.voucher'],

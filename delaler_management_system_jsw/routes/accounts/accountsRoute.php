@@ -33,6 +33,12 @@ Route::middleware(['auth'])->prefix('accounts')->group(function () {
     Route::post('/invoices/company-wise-upload/import', [InvoiceController::class, 'importCompanyWiseInvoices'])->name('accounts.invoices.company_wise_upload.import');
     Route::get('/invoices/company-wise-upload/template', [InvoiceController::class, 'downloadCompanyWiseInvoiceTemplate'])->name('accounts.invoices.company_wise_upload.template');
 
+    // Payment Receipt Upload Submodule
+    Route::get('/invoices/payment-receipt-upload', [\App\Http\Controllers\Accounts\PaymentReceiptUploadController::class, 'index'])->name('accounts.invoices.payment_receipt_upload.index');
+    Route::post('/invoices/payment-receipt-upload/list', [\App\Http\Controllers\Accounts\PaymentReceiptUploadController::class, 'list'])->name('accounts.invoices.payment_receipt_upload.list');
+    Route::post('/invoices/payment-receipt-upload/import', [\App\Http\Controllers\Accounts\PaymentReceiptUploadController::class, 'import'])->name('accounts.invoices.payment_receipt_upload.import');
+    Route::get('/invoices/payment-receipt-upload/template', [\App\Http\Controllers\Accounts\PaymentReceiptUploadController::class, 'downloadTemplate'])->name('accounts.invoices.payment_receipt_upload.template');
+
     // Upload Excel
     Route::get('/upload-excel', [AccountsUploadController::class, 'index'])->name('accounts.upload.index');
     Route::post('/upload-excel/invoices/list', [AccountsUploadController::class, 'invoicesList'])->name('accounts.upload.invoices.list');
