@@ -159,9 +159,17 @@ class ReuseModule
      */
     public static function generateInvoiceNumber()
     {
-        $latestInvoice = Invoice::lockForUpdate()->orderBy('id', 'desc')->first();
+        $latestInvoice = Invoice::withTrashed()->lockForUpdate()->orderBy('id', 'desc')->first();
         $nextId = $latestInvoice ? $latestInvoice->id + 1 : 1;
-        return 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+
+        $invoiceNo = 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+
+        while (Invoice::withTrashed()->where('invoice_no', $invoiceNo)->exists()) {
+            $nextId++;
+            $invoiceNo = 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+        }
+
+        return $invoiceNo;
     }
 
     /**

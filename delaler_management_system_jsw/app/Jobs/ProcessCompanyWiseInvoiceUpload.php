@@ -11,6 +11,10 @@ use App\Models\UploadTrack;
 use App\Models\Company;
 use App\Models\Accounts\Invoice;
 use App\Models\Accounts\InvoiceDetail;
+use App\Models\Accounts\InvoicePayment;
+use App\Models\Accounts\PaymentTrack;
+use App\Models\Accounts\VoucherType;
+use App\Models\Reports\DailyStockReport;
 use App\Models\Dealers\Dealer;
 use App\Models\Dealers\DealerCompany;
 use App\Models\Inventory\Product;
@@ -322,6 +326,83 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                     $invoice->no_of_goods = $invoice->invoiceDetails()->count();
                     $invoice->invoice_status = 1; // Automatically set to Finalized
                     $invoice->save();
+
+                    // 1. Decrease product stock & record product-wise sale quantity in DailyStockReport
+                    foreach ($invoice->invoiceDetails as $detail) {
+                        $productId = null;
+                        if ($detail->productPricing) {
+                            $productId = $detail->productPricing->product_id;
+                        }
+                        if (!$productId && isset($detail->product_pricing_id)) {
+                            $pricingRec = ProductPricing::find($detail->product_pricing_id);
+                            $productId = $pricingRec ? $pricingRec->product_id : null;
+                        }
+
+                        if ($productId) {
+                            $product = Product::lockForUpdate()->find($productId);
+                            if ($product) {
+                                if ($product->stock_quantity < $detail->quantity) {
+                                    throw new \Exception("Stock is low for product: " . $product->product_name . ". Available stock: " . number_format($product->stock_quantity, 3) . " MT.");
+                                }
+                                $product->stock_quantity -= $detail->quantity;
+                                $product->save();
+                            }
+
+                            if ($detail->quantity > 0) {
+                                DailyStockReport::recordSale(
+                                    $companyId,
+                                    $productId,
+                                    $formattedInvoiceDate,
+                                    (float)$detail->quantity
+                                );
+                            }
+                        }
+                    }
+
+                    // 2. Create SALES Voucher in PaymentTrack
+                    $saleVoucherType = VoucherType::where('name', 'SALES')->first();
+                    $txDate = Carbon::parse($invoice->invoice_generate_date ?? now())->setTimeFrom(now());
+
+                    $existingSaleTrack = PaymentTrack::where('invoice_id', $invoice->id)
+                        ->where('payment_mode', 'entry')
+                        ->first();
+
+                    if ($existingSaleTrack) {
+                        $existingSaleTrack->update([
+                            'amount' => $invoice->chargeable_amount,
+                            'balance_amount' => $invoice->chargeable_amount,
+                            'payment_for_mt' => $invoice->total_quantity,
+                            'voucher_type_id' => $saleVoucherType ? $saleVoucherType->id : null,
+                            'transaction_date' => $txDate,
+                        ]);
+                    } else {
+                        PaymentTrack::create([
+                            'invoice_id' => $invoice->id,
+                            'amount' => $invoice->chargeable_amount,
+                            'balance_amount' => $invoice->chargeable_amount,
+                            'payment_for_mt' => $invoice->total_quantity,
+                            'payment_mode' => 'entry',
+                            'voucher_type_id' => $saleVoucherType ? $saleVoucherType->id : null,
+                            'transaction_date' => $txDate,
+                            'remarks' => 'Auto generated sale voucher on invoice upload',
+                        ]);
+                    }
+
+                    // 3. Create or update InvoicePayment record
+                    $invoicePayment = InvoicePayment::where('invoice_id', $invoice->id)->first();
+                    if (!$invoicePayment) {
+                        InvoicePayment::create([
+                            'invoice_id' => $invoice->id,
+                            'outstanding_amount' => $invoice->chargeable_amount,
+                            'paid_amount' => 0.00,
+                            'clear_status' => 'pending payment'
+                        ]);
+                    } else {
+                        $invoicePayment->update([
+                            'outstanding_amount' => $invoice->chargeable_amount - $invoicePayment->paid_amount,
+                            'clear_status' => ($invoice->chargeable_amount - $invoicePayment->paid_amount) <= 0.01 ? 'clear payment' : 'pending payment'
+                        ]);
+                    }
 
                     DB::commit();
                     $imported += count($groupRows);
