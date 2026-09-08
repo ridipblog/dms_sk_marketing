@@ -85,10 +85,10 @@ class CreditNoteController extends Controller
                 });
             }
 
-            // Total sums for filtered credit notes
-            $totalsQuery = clone $query;
-            $totalAmount = (float)$totalsQuery->sum('amount');
-            $totalCount = (int)$totalsQuery->count();
+            // Optimized single SQL query for count and sum
+            $totals = (clone $query)->selectRaw('COUNT(*) as total_count, COALESCE(SUM(amount), 0) as total_amount')->first();
+            $totalCount = (int)($totals->total_count ?? 0);
+            $totalAmount = (float)($totals->total_amount ?? 0);
 
             $creditNotes = $query->orderBy('id', 'desc')->paginate(10);
 

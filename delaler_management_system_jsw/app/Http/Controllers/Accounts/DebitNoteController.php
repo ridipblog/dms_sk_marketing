@@ -84,12 +84,18 @@ class DebitNoteController extends Controller
                 });
             }
 
-            // Total sums for filtered debit notes
-            $totalsQuery = clone $query;
-            $totalAmount = (float)$totalsQuery->sum('amount');
-            $totalBaseAmount = (float)$totalsQuery->sum('base_amount');
-            $totalGstAmount = (float)$totalsQuery->sum('gst_amount');
-            $totalCount = (int)$totalsQuery->count();
+            // Optimized single SQL query for count, amount sum, base sum, and gst sum
+            $totals = (clone $query)->selectRaw('
+                COUNT(*) as total_count,
+                COALESCE(SUM(amount), 0) as total_amount,
+                COALESCE(SUM(base_amount), 0) as total_base_amount,
+                COALESCE(SUM(gst_amount), 0) as total_gst_amount
+            ')->first();
+
+            $totalCount = (int)($totals->total_count ?? 0);
+            $totalAmount = (float)($totals->total_amount ?? 0);
+            $totalBaseAmount = (float)($totals->total_base_amount ?? 0);
+            $totalGstAmount = (float)($totals->total_gst_amount ?? 0);
 
             $debitNotes = $query->orderBy('id', 'desc')->paginate(10);
 
