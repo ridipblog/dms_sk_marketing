@@ -29,6 +29,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/purchase/invoices/finalize', [PurchaseInvoiceController::class, 'finalizePurchase'])->name('purchase.invoices.finalize');
     Route::post('/purchase/invoices/payment', [PurchaseInvoiceController::class, 'storePayment'])->name('purchase.invoices.payment');
 
+    // Purchase Invoice Excel Upload Submodule Routes
+    Route::get('/purchase/invoices/upload', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'index'])->name('purchase.invoices.upload.index');
+    Route::post('/purchase/invoices/upload/list', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'list'])->name('purchase.invoices.upload.list');
+    Route::post('/purchase/invoices/upload/import', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'import'])->name('purchase.invoices.upload.import');
+    Route::get('/purchase/invoices/upload/template', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'downloadTemplate'])->name('purchase.invoices.upload.template');
+
+    // Purchase Invoice Payment Upload Submodule Routes
+    Route::get('/purchase/invoices/payment-upload', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'paymentUploadIndex'])->name('purchase.invoices.payment_upload.index');
+
     // Stock Ledger Routing
     Route::get('/stocks', [StockController::class, 'index'])->name('inventory.stocks.index');
     Route::post('/stocks/adjust', [StockController::class, 'adjust'])->name('inventory.stocks.adjust');

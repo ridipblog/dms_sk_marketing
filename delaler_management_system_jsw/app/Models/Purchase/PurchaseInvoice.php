@@ -22,6 +22,8 @@ class PurchaseInvoice extends Model
         'total_gst_amount',
         'total_cgst_amount',
         'total_sgst_amount',
+        'total_igst_amount',
+        'tax_type',
         'chargeable_amount',
         'no_of_goods',
         'status',

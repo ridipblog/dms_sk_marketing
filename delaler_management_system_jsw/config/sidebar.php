@@ -242,6 +242,24 @@ return [
                     'api_routes' => ['purchase.invoices.list', 'purchase.invoices.store', 'purchase.invoices.fetch_items', 'purchase.invoices.store_item', 'purchase.invoices.delete_item', 'purchase.invoices.finalize', 'purchase.invoices.payment'],
                     'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
                 ],
+                [
+                    'title' => 'Upload Purchase Invoices',
+                    'route' => 'purchase.invoices.upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'purchase.invoices.upload.list',
+                        'purchase.invoices.upload.import',
+                        'purchase.invoices.upload.template',
+                    ]
+                ],
+                [
+                    'title' => 'Upload Purchase Payments',
+                    'route' => 'purchase.invoices.payment_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'purchase.invoices.payment_upload.list',
+                    ]
+                ],
 //                [
 //                    'title' => 'Product Stock',
 //                    'route' => 'inventory.stocks.index',
