@@ -122,6 +122,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                         $row[5] ?? '',
                         $row[6] ?? '',
                         $row[7] ?? '',
+                        $row[8] ?? '',
                         'Incomplete data (must have Dealer GST No, User Invoice No, Invoice Date, Product Name, Quantity).'
                     ];
                     continue;
@@ -130,7 +131,8 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                 $dealerGstNo       = trim($row[0] ?? '');
                 $userInputInvoiceNo = trim($row[1] ?? '');
                 $invoiceDate       = trim($row[2] ?? '');
-                $productName       = trim($row[3] ?? '');
+                $dueDate           = trim($row[3] ?? '');
+                $productName       = trim($row[4] ?? '');
 
                 if (empty($userInputInvoiceNo)) {
                     $failed++;
@@ -144,6 +146,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                         $row[5] ?? '',
                         $row[6] ?? '',
                         $row[7] ?? '',
+                        $row[8] ?? '',
                         'User Invoice No is required.'
                     ];
                     continue;
@@ -163,6 +166,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                         $row[5] ?? '',
                         $row[6] ?? '',
                         $row[7] ?? '',
+                        $row[8] ?? '',
                         $errMsg
                     ];
                     continue;
@@ -186,6 +190,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                     $dealerGstNo        = trim($firstRow[0] ?? '');
                     $userInputInvoiceNo = trim($firstRow[1] ?? '');
                     $rawDate            = trim($firstRow[2] ?? '');
+                    $rawDueDate         = trim($firstRow[3] ?? '');
 
                     if (empty($dealerGstNo)) {
                         throw new \Exception("Dealer GST Number is missing.");
@@ -196,7 +201,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                     }
 
                     $formattedInvoiceDate = $this->parseDate($rawDate);
-                    $formattedDueDate     = date('Y-m-d', strtotime($formattedInvoiceDate . ' + 21 days'));
+                    $formattedDueDate     = !empty($rawDueDate) ? $this->parseDate($rawDueDate) : date('Y-m-d', strtotime($formattedInvoiceDate . ' + 21 days'));
 
                     // 1. Resolve Dealer using Dealer GST Number
                     $dealer = Dealer::where('gst_number', $dealerGstNo)->first();
@@ -267,11 +272,11 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                     foreach ($groupRows as $item) {
                         $row = $item['row'];
                         $rowNum = $item['original_row_number'];
-                        $productName  = trim($row[3] ?? '');
-                        $quantity     = (float)trim($row[4] ?? 0);
-                        $inputRate    = isset($row[5]) && trim($row[5]) !== '' ? (float)trim($row[5]) : null;
-                        $inputGst     = isset($row[6]) && trim($row[6]) !== '' ? (float)trim($row[6]) : 18.00;
-                        $inputTaxType = isset($row[7]) && trim($row[7]) !== '' ? strtolower(trim($row[7])) : 'intra';
+                        $productName  = trim($row[4] ?? '');
+                        $quantity     = (float)trim($row[5] ?? 0);
+                        $inputRate    = isset($row[6]) && trim($row[6]) !== '' ? (float)trim($row[6]) : null;
+                        $inputGst     = isset($row[7]) && trim($row[7]) !== '' ? (float)trim($row[7]) : 18.00;
+                        $inputTaxType = isset($row[8]) && trim($row[8]) !== '' ? strtolower(trim($row[8])) : 'intra';
 
                         if (!$productName || $quantity <= 0) continue;
 
@@ -421,6 +426,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                             $item['row'][5] ?? '',
                             $item['row'][6] ?? '',
                             $item['row'][7] ?? '',
+                            $item['row'][8] ?? '',
                             $e->getMessage()
                         ];
                     }
@@ -435,7 +441,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                 $handle = fopen($tempPath, 'w');
 
                 fputs($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
-                fputcsv($handle, ['Dealer GST No', 'User Invoice No', 'Invoice Date', 'Product Name', 'Quantity', 'Rate', 'GST %', 'GST Type', 'Error Reason']);
+                fputcsv($handle, ['Dealer GST No', 'User Invoice No', 'Invoice Date', 'Due Date', 'Product Name', 'Quantity', 'Rate', 'GST %', 'GST Type', 'Error Reason']);
 
                 foreach ($failedRows as $failedRow) {
                     fputcsv($handle, $failedRow);

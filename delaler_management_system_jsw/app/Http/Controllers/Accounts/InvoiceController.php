@@ -1106,6 +1106,7 @@ class InvoiceController extends Controller
             'Dealer GST No',
             'User Invoice No',
             'Invoice Date',
+            'Due Date',
             'Product Name',
             'Quantity',
             'Rate (Without GST)',
@@ -1117,12 +1118,14 @@ class InvoiceController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
+            $dueDate = date('Y-m-d', strtotime('+21 days'));
+
             // Sample Row 1 (Product invoice item 1)
-            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), 'JSW TMT Rebar 12mm', '10', '45000.00', '18.00', 'intra']);
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), $dueDate, 'JSW TMT Rebar 12mm', '10', '45000.00', '18.00', 'intra']);
             // Sample Row 2 (Grouped with Row 1 for product item 2)
-            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), 'JSW TMT Rebar 16mm', '5', '48000.00', '18.00', 'intra']);
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), $dueDate, 'JSW TMT Rebar 16mm', '5', '48000.00', '18.00', 'intra']);
             // Sample Row 3 (Another unique user input invoice number)
-            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0002', date('Y-m-d'), 'JSW Structural Steel', '20', '52000.00', '18.00', 'inter']);
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0002', date('Y-m-d'), $dueDate, 'JSW Structural Steel', '20', '52000.00', '18.00', 'inter']);
 
             fclose($file);
         };

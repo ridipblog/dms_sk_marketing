@@ -24,9 +24,10 @@
         <div class="card-body p-3">
             <h6 class="fw-bold text-dark mb-2"><i class="fas fa-info-circle text-primary me-2"></i>Instructions & Format</h6>
             <ul class="mb-0 text-muted small ps-3">
-                <li>Excel / CSV file must contain columns: <strong>Dealer GST No, User Invoice No, Invoice Date, Product Name, Quantity, Rate (Without GST), GST Percentage, GST Type (intra/inter)</strong>.</li>
+                <li>Excel / CSV file must contain columns: <strong>Dealer GST No, User Invoice No, Invoice Date, Due Date, Product Name, Quantity, Rate (Without GST), GST Percentage, GST Type (intra/inter)</strong>.</li>
                 <li><strong>Dealer GST No</strong> resolves the dealer record for the active company.</li>
                 <li><strong>User Invoice No</strong> is the user-provided invoice number stored in <code>user_invoice_no</code>. System automatically generates system invoice numbers in <code>invoice_no</code>.</li>
+                <li><strong>Due Date</strong> is the payment due date provided in the file (supports <code>DD-MM-YYYY</code> or <code>YYYY-MM-DD</code>).</li>
                 <li>Multiple items in Excel can share the same <strong>User Invoice No</strong> for one dealer, but the same User Invoice No cannot be assigned to multiple different dealers.</li>
                 <li><strong>Product Name</strong> matches the item in the products table.</li>
                 <li><strong>Rate (Without GST)</strong>, <strong>GST Percentage</strong> (e.g. 18.00), and <strong>GST Type</strong> (intra/inter) are used to calculate CGST, SGST, IGST, and total chargeable amounts.</li>
