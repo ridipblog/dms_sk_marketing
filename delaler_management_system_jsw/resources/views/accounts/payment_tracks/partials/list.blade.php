@@ -68,7 +68,12 @@
                     <td>
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="fw-bold text-success">{{ $invoice->invoice_no }}</span>
+                                @if (!empty($invoice->user_invoice_no))
+                                    <span class="fw-bold text-success">{{ $invoice->user_invoice_no }}</span>
+                                    <br><small class="text-secondary fw-semibold">Ref: {{ $invoice->invoice_no }}</small>
+                                @else
+                                    <span class="fw-bold text-success">{{ $invoice->invoice_no }}</span>
+                                @endif
                                 @if (($invoice->manual_amount_update ?? 0) == 1)
                                     <br><span class="badge bg-info text-dark" style="font-size: 0.65rem;">Manual Amount Update</span>
                                 @endif
