@@ -79,14 +79,24 @@ class CreditNoteController extends Controller
                     $q->whereHas('paymentTrack', function ($sq) use ($search) {
                         $sq->where('remarks', 'like', "%{$search}%");
                     })->orWhereHas('paymentTrack.invoice', function ($sq) use ($search) {
-                        $sq->where('invoice_no', 'like', "%{$search}%");
+                        $sq->where('invoice_no', 'like', "%{$search}%")
+                            ->orWhere('user_invoice_no', 'like', "%{$search}%");
                     });
                 });
             }
 
+            // Total sums for filtered credit notes
+            $totalsQuery = clone $query;
+            $totalAmount = (float)$totalsQuery->sum('amount');
+            $totalCount = (int)$totalsQuery->count();
+
             $creditNotes = $query->orderBy('id', 'desc')->paginate(10);
 
-            $html = view('accounts.credit_notes.partials.list', compact('creditNotes'))->render();
+            $html = view('accounts.credit_notes.partials.list', compact(
+                'creditNotes',
+                'totalAmount',
+                'totalCount'
+            ))->render();
 
             return response()->json([
                 'success' => true,
