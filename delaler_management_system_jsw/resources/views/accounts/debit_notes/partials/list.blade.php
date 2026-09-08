@@ -24,7 +24,14 @@
                     $gstAmount = $debitNote->gst_amount ?? ($debitNote->amount ? round($debitNote->amount - $baseAmount, 2) : 0);
                 @endphp
                 <tr>
-                    <td><span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->invoice_no ?? 'N/A' }}</span></td>
+                    <td>
+                        @if (!empty($debitNote->paymentTrack->invoice->user_invoice_no))
+                            <span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->user_invoice_no }}</span>
+                            <br><small class="text-secondary fw-semibold">Ref: {{ $debitNote->paymentTrack->invoice->invoice_no }}</small>
+                        @else
+                            <span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->invoice_no ?? 'N/A' }}</span>
+                        @endif
+                    </td>
                     <td>{{ $dealerName }}</td>
                     <td>{{ $debitNote->paymentTrack->transaction_date ? $debitNote->paymentTrack->transaction_date->format('d M Y') : 'N/A' }}</td>
                     <td>₹ {{ inr($baseAmount) }}</td>

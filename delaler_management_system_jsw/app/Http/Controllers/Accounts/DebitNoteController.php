@@ -78,7 +78,8 @@ class DebitNoteController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('reason', 'like', "%{$search}%")
                         ->orWhereHas('paymentTrack.invoice', function ($sq) use ($search) {
-                            $sq->where('invoice_no', 'like', "%{$search}%");
+                            $sq->where('invoice_no', 'like', "%{$search}%")
+                                ->orWhere('user_invoice_no', 'like', "%{$search}%");
                         });
                 });
             }
