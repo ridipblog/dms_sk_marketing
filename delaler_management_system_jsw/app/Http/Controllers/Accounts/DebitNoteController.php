@@ -84,9 +84,22 @@ class DebitNoteController extends Controller
                 });
             }
 
+            // Total sums for filtered debit notes
+            $totalsQuery = clone $query;
+            $totalAmount = (float)$totalsQuery->sum('amount');
+            $totalBaseAmount = (float)$totalsQuery->sum('base_amount');
+            $totalGstAmount = (float)$totalsQuery->sum('gst_amount');
+            $totalCount = (int)$totalsQuery->count();
+
             $debitNotes = $query->orderBy('id', 'desc')->paginate(10);
 
-            $html = view('accounts.debit_notes.partials.list', compact('debitNotes'))->render();
+            $html = view('accounts.debit_notes.partials.list', compact(
+                'debitNotes',
+                'totalAmount',
+                'totalBaseAmount',
+                'totalGstAmount',
+                'totalCount'
+            ))->render();
 
             return response()->json([
                 'success' => true,
