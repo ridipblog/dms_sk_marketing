@@ -690,7 +690,7 @@ class InvoiceController extends Controller
                     $invoice->invoice_generate_date = now()->format('Y-m-d');
                 }
                 $generateDate = \Carbon\Carbon::parse($invoice->invoice_generate_date)->format('Y-m-d');
-                $invoice->due_date = date('Y-m-d', strtotime('+21 days', strtotime($generateDate)));
+                $invoice->due_date = date('Y-m-d', strtotime('+30 days', strtotime($generateDate)));
                 $invoice->save();
 
                 // Decrease product stock & record product-wise sale quantity in DailyStockReport
@@ -1118,7 +1118,7 @@ class InvoiceController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            $dueDate = date('Y-m-d', strtotime('+21 days'));
+            $dueDate = date('Y-m-d', strtotime('+30 days'));
 
             // Sample Row 1 (Product invoice item 1)
             fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), $dueDate, 'JSW TMT Rebar 12mm', '10', '45000.00', '18.00', 'intra']);

@@ -201,7 +201,7 @@ class ProcessCompanyWiseInvoiceUpload implements ShouldQueue
                     }
 
                     $formattedInvoiceDate = $this->parseDate($rawDate);
-                    $formattedDueDate     = !empty($rawDueDate) ? $this->parseDate($rawDueDate) : date('Y-m-d', strtotime($formattedInvoiceDate . ' + 21 days'));
+                    $formattedDueDate     = !empty($rawDueDate) ? $this->parseDate($rawDueDate) : date('Y-m-d', strtotime($formattedInvoiceDate . ' + 30 days'));
 
                     // 1. Resolve Dealer using Dealer GST Number
                     $dealer = Dealer::where('gst_number', $dealerGstNo)->first();
