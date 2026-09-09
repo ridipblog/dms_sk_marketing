@@ -258,6 +258,8 @@ return [
                     'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
                     'api_routes' => [
                         'purchase.invoices.payment_upload.list',
+                        'purchase.invoices.payment_upload.import',
+                        'purchase.invoices.payment_upload.template',
                     ]
                 ],
 //                [

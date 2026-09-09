@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\UploadTrack;
 use App\Jobs\ProcessPurchaseInvoiceUpload;
+use App\Jobs\ProcessPurchasePaymentUpload;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -226,6 +227,178 @@ class PurchaseInvoiceUploadController extends Controller
                 '52000.00',
                 '18.00',
                 'inter'
+            ]);
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Fetch upload tracks for purchase payments via AJAX.
+     */
+    public function paymentUploadList(Request $request)
+    {
+        try {
+            $companyId = session('active_company_id');
+            if (!$companyId) {
+                $user = Auth::user();
+                $mapping = DB::table('role_user_company')
+                    ->where('user_id', $user->id)
+                    ->where('status', 'active')
+                    ->first();
+                $companyId = $mapping ? $mapping->company_id : 1;
+            }
+
+            $query = UploadTrack::where('upload_type', 'purchase_payments')
+                ->where('company_id', $companyId)
+                ->with('user')
+                ->orderBy('id', 'desc');
+
+            if ($request->filled('search')) {
+                $search = trim($request->search);
+                $query->where('file_name', 'like', "%{$search}%");
+            }
+
+            $tracks = $query->paginate(10);
+
+            $html = view('purchase.invoices.partials.payment_upload_table', compact('tracks'))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load upload tracks: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Handle Purchase Payment Excel import request.
+     */
+    public function paymentUploadImport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'excel_file' => 'required|file|mimes:csv,xlsx,xls|max:10240',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->hasFile('excel_file')) {
+                $ext = strtolower($request->file('excel_file')->getClientOriginalExtension());
+                if (!in_array($ext, ['csv', 'xlsx', 'xls'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The uploaded file must be a file of type: csv, xlsx, xls.'
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ]);
+            }
+        }
+
+        try {
+            $user = Auth::user();
+            $roleUserCompanyId = session('active_map_id');
+            $companyId = session('active_company_id');
+
+            if (!$companyId || !$roleUserCompanyId) {
+                $mapping = DB::table('role_user_company')
+                    ->where('user_id', $user->id)
+                    ->where('status', 'active')
+                    ->first();
+
+                if (!$mapping) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No active role company mapping found.'
+                    ]);
+                }
+                $companyId = $mapping->company_id;
+                $roleUserCompanyId = $mapping->id;
+            }
+
+            $file = $request->file('excel_file');
+            $originalName = $file->getClientOriginalName();
+            $fileName = 'purchase_payments_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('purchase_uploads/payments', $fileName, 'local');
+
+            $track = UploadTrack::create([
+                'user_id' => $user->id,
+                'company_id' => $companyId,
+                'role_user_company_id' => $roleUserCompanyId,
+                'file_name' => $originalName,
+                'status' => 'pending',
+                'upload_type' => 'purchase_payments',
+                'total_rows' => 0,
+                'imported_rows' => 0,
+                'failed_rows' => 0,
+            ]);
+
+            // Dispatch background queue job
+            ProcessPurchasePaymentUpload::dispatch($track->id, $filePath);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase payments upload started in background. Monitor status in the history table below.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while uploading the file: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Download Purchase Payment Excel template CSV.
+     */
+    public function paymentUploadTemplate(): StreamedResponse
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="purchase_payment_upload_template.csv"',
+        ];
+
+        $callback = function () {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel compatibility
+            fputs($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header row
+            fputcsv($handle, [
+                'User Invoice No',
+                'Payment Date',
+                'Amount',
+                'Payment Mode',
+                'Transaction Ref No',
+                'Remarks'
+            ]);
+
+            // Sample rows
+            fputcsv($handle, [
+                'PINV-2026-0001',
+                date('Y-m-d'),
+                '25000.00',
+                'Bank Transfer',
+                'UTR-123456789',
+                'Supplier payment paid via NEFT'
+            ]);
+
+            fputcsv($handle, [
+                'PINV-2026-0002',
+                date('Y-m-d'),
+                '50000.00',
+                'Cheque',
+                'CHQ-987654',
+                'Cheque payment against purchase bill'
             ]);
 
             fclose($handle);

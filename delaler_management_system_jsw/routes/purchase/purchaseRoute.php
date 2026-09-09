@@ -37,6 +37,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Purchase Invoice Payment Upload Submodule Routes
     Route::get('/purchase/invoices/payment-upload', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'paymentUploadIndex'])->name('purchase.invoices.payment_upload.index');
+    Route::post('/purchase/invoices/payment-upload/list', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'paymentUploadList'])->name('purchase.invoices.payment_upload.list');
+    Route::post('/purchase/invoices/payment-upload/import', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'paymentUploadImport'])->name('purchase.invoices.payment_upload.import');
+    Route::get('/purchase/invoices/payment-upload/template', [\App\Http\Controllers\Purchase\PurchaseInvoiceUploadController::class, 'paymentUploadTemplate'])->name('purchase.invoices.payment_upload.template');
 
     // Stock Ledger Routing
     Route::get('/stocks', [StockController::class, 'index'])->name('inventory.stocks.index');
