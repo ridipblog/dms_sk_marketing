@@ -5,7 +5,7 @@ $(document).ready(function() {
     try {
         loadUploadTracks();
     } catch (err) {
-        console.error('Error during initial load of payment receipt upload tracks:', err);
+        console.error('Error during initial load of purchase payment upload tracks:', err);
     }
 
     // Refresh history button handler
@@ -25,7 +25,7 @@ $(document).ready(function() {
                 }
             });
         } catch (err) {
-            console.error('Error refreshing payment receipt upload history:', err);
+            console.error('Error refreshing payment upload history:', err);
             btn.prop('disabled', false);
             icon.removeClass('fa-spin');
         }
@@ -66,8 +66,8 @@ $(document).ready(function() {
     // Load upload tracks list via AJAX
     function loadUploadTracks(page = 1, search = '', callback = null) {
         try {
-            let listUrl = window.PaymentReceiptUploadConfig ? window.PaymentReceiptUploadConfig.listUrl : '';
-            let csrfToken = window.PaymentReceiptUploadConfig ? window.PaymentReceiptUploadConfig.csrfToken : '';
+            let listUrl = window.PurchasePaymentUploadConfig ? window.PurchasePaymentUploadConfig.listUrl : '';
+            let csrfToken = window.PurchasePaymentUploadConfig ? window.PurchasePaymentUploadConfig.csrfToken : '';
 
             $.ajax({
                 url: listUrl,
@@ -110,13 +110,13 @@ $(document).ready(function() {
     }
 
     // Submit upload form handler
-    $('#paymentReceiptUploadForm').on('submit', function(e) {
+    $('#purchasePaymentUploadForm').on('submit', function(e) {
         try {
             e.preventDefault();
             let formData = new FormData(this);
             let alertBox = $('#uploadAlert');
             let btn = $('#btnSubmit');
-            let importUrl = window.PaymentReceiptUploadConfig ? window.PaymentReceiptUploadConfig.importUrl : '';
+            let importUrl = window.PurchasePaymentUploadConfig ? window.PurchasePaymentUploadConfig.importUrl : '';
 
             alertBox.addClass('d-none').removeClass('alert-success alert-danger');
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
@@ -132,10 +132,10 @@ $(document).ready(function() {
                         btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-1"></i> Start Upload');
                         if (response.success) {
                             alertBox.removeClass('d-none').addClass('alert-success').text(response.message);
-                            $('#paymentReceiptUploadForm')[0].reset();
+                            $('#purchasePaymentUploadForm')[0].reset();
                             setTimeout(function() {
                                 try {
-                                    $('#uploadPaymentReceiptModal').modal('hide');
+                                    $('#uploadPurchasePaymentModal').modal('hide');
                                     alertBox.addClass('d-none');
                                     loadUploadTracks();
                                 } catch (err) {
@@ -166,7 +166,7 @@ $(document).ready(function() {
                 }
             });
         } catch (err) {
-            console.error('Error in paymentReceiptUploadForm submit handler:', err);
+            console.error('Error in purchasePaymentUploadForm submit handler:', err);
             $('#btnSubmit').prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-1"></i> Start Upload');
             $('#uploadAlert').removeClass('d-none').addClass('alert-danger').text('An error occurred while preparing form submission.');
         }
