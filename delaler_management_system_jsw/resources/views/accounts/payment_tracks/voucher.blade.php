@@ -17,7 +17,7 @@
                     <h4 class="mb-0">
                         <a href="{{ route('accounts.payment_tracks.index') }}" class="text-secondary me-2"><i
                                 class="fas fa-arrow-left"></i></a>
-                        Manage Vouchers - Invoice #{{ $invoice->invoice_no }}
+                        Manage Vouchers - Invoice #{{ $invoice->user_invoice_no ?? $invoice->invoice_no }} @if(!empty($invoice->user_invoice_no)) <small class="text-muted fs-6">(Ref: {{ $invoice->invoice_no }})</small> @endif
                     </h4>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVoucherModal">
                         <i class="fas fa-plus me-1"></i> Add Voucher

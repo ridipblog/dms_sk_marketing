@@ -1,3 +1,21 @@
+<!-- Summary Header Banner -->
+<div class="px-3 py-2 bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="small text-muted fw-semibold">
+        <i class="fas fa-file-invoice text-danger me-1"></i> Total Debit Notes: <strong class="text-dark">{{ $totalCount ?? $debitNotes->total() }}</strong>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="small">
+            <span class="text-muted">Base Total:</span> <strong class="text-primary">₹ {{ inr($totalBaseAmount ?? 0) }}</strong>
+        </div>
+        <div class="small">
+            <span class="text-muted">GST Total:</span> <strong class="text-warning text-dark">₹ {{ inr($totalGstAmount ?? 0) }}</strong>
+        </div>
+        <div class="small bg-white px-3 py-1 rounded border shadow-sm">
+            <span class="text-muted fw-bold">Sum of Total Amount:</span> <strong class="text-danger fs-6 ms-1">₹ {{ inr($totalAmount ?? 0) }}</strong>
+        </div>
+    </div>
+</div>
+
 <div class="table-responsive w-100"
     style="display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
     <table class="table table-hover align-middle mb-0 text-nowrap" style="min-width: max-content;">
@@ -24,7 +42,14 @@
                     $gstAmount = $debitNote->gst_amount ?? ($debitNote->amount ? round($debitNote->amount - $baseAmount, 2) : 0);
                 @endphp
                 <tr>
-                    <td><span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->invoice_no ?? 'N/A' }}</span></td>
+                    <td>
+                        @if (!empty($debitNote->paymentTrack->invoice->user_invoice_no))
+                            <span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->user_invoice_no }}</span>
+                            <br><small class="text-secondary fw-semibold">Ref: {{ $debitNote->paymentTrack->invoice->invoice_no }}</small>
+                        @else
+                            <span class="fw-bold text-danger">{{ $debitNote->paymentTrack->invoice->invoice_no ?? 'N/A' }}</span>
+                        @endif
+                    </td>
                     <td>{{ $dealerName }}</td>
                     <td>{{ $debitNote->paymentTrack->transaction_date ? $debitNote->paymentTrack->transaction_date->format('d M Y') : 'N/A' }}</td>
                     <td>₹ {{ inr($baseAmount) }}</td>
@@ -58,9 +83,23 @@
                 </tr>
             @endforelse
         </tbody>
+        @if(count($debitNotes) > 0)
+        <tfoot class="table-light fw-bold border-top">
+            <tr>
+                <td colspan="3" class="text-end text-dark">Total (All Filtered Records):</td>
+                <td class="text-primary">₹ {{ inr($totalBaseAmount ?? 0) }}</td>
+                <td class="text-warning text-dark">+₹ {{ inr($totalGstAmount ?? 0) }}</td>
+                <td class="text-danger fw-bold fs-6">₹ {{ inr($totalAmount ?? 0) }}</td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 </div>
 
-<div class="mt-3 d-flex justify-content-end">
-    {{ $debitNotes->links('pagination::bootstrap-5') }}
-</div>
+@if ($debitNotes->hasPages())
+    <div class="p-3 border-top d-flex justify-content-between align-items-center text-muted small">
+        <span>Showing {{ $debitNotes->firstItem() ?? 0 }} to {{ $debitNotes->lastItem() ?? 0 }} of {{ $debitNotes->total() }} entries</span>
+        {{ $debitNotes->links('pagination::bootstrap-5') }}
+    </div>
+@endif

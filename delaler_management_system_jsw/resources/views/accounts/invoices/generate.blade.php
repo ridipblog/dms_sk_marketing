@@ -91,6 +91,14 @@
 
                             <div class="row">
                                 <div class="col-12 col-md-3 mb-3">
+                                    <label for="tax_type" class="form-label fw-bold">Tax Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="tax_type" name="tax_type" required>
+                                        <option value="intra" {{ ($invoice->tax_type ?? 'intra') == 'intra' ? 'selected' : '' }}>Intra-State (CGST + SGST)</option>
+                                        <option value="inter" {{ ($invoice->tax_type ?? '') == 'inter' ? 'selected' : '' }}>Inter-State (IGST)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-3 mb-3">
                                     <label for="gst" class="form-label fw-bold">GST (%) <span
                                             class="text-danger">*</span></label>
                                     <input type="number" step="0.01" class="form-control" id="gst" name="gst"
@@ -108,7 +116,9 @@
                                     <input type="text" class="form-control" id="delivery_note" name="delivery_note"
                                         value="{{ $invoice->delivery_note ?? '' }}" placeholder="Enter Delivery Note">
                                 </div>
+                            </div>
 
+                            <div class="row">
                                 <div class="col-12 col-md-3 mb-3">
                                     <label for="destination" class="form-label fw-bold">Destination</label>
                                     <input type="text" class="form-control" id="destination" name="destination"
@@ -156,7 +166,7 @@
                                                 @foreach ($products as $productPricing)
                                                     <option value="{{ $productPricing->id ?? null }}"
                                                         data-price="{{ $productPricing->price_per_mt ?? 0 }}"
-                                                        data-gst="{{ $productPricing->product->gst ?? $productPricing->gst_percentage ?? 18 }}"
+                                                        data-gst="{{ $invoice->gst ?? 18 }}"
                                                         data-stock="{{ $productPricing->product->stock_quantity ?? 0 }}">
                                                         {{ $productPricing->product->product_name ?? 'Unknown Product' }}
                                                         (₹{{ $productPricing->price_per_mt ?? 0 }}/MT)

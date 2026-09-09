@@ -148,6 +148,26 @@ return [
                     ]
                 ],
                 [
+                    'title' => 'Company-Wise Upload',
+                    'route' => 'accounts.invoices.company_wise_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'accounts.invoices.company_wise_upload.list',
+                        'accounts.invoices.company_wise_upload.import',
+                        'accounts.invoices.company_wise_upload.template',
+                    ]
+                ],
+                [
+                    'title' => 'Upload Payment Receipts',
+                    'route' => 'accounts.invoices.payment_receipt_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'accounts.invoices.payment_receipt_upload.list',
+                        'accounts.invoices.payment_receipt_upload.import',
+                        'accounts.invoices.payment_receipt_upload.template',
+                    ]
+                ],
+                [
                     'title' => 'Payment Receipts',
                     'route' => 'accounts.payment_tracks.index',
                     'view_routes' => ['accounts.payment_tracks.voucher'],
@@ -221,6 +241,24 @@ return [
                     'view_routes' => ['purchase.invoices.generate', 'purchase.invoices.view'],
                     'api_routes' => ['purchase.invoices.list', 'purchase.invoices.store', 'purchase.invoices.fetch_items', 'purchase.invoices.store_item', 'purchase.invoices.delete_item', 'purchase.invoices.finalize', 'purchase.invoices.payment'],
                     'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                ],
+                [
+                    'title' => 'Upload Purchase Invoices',
+                    'route' => 'purchase.invoices.upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'purchase.invoices.upload.list',
+                        'purchase.invoices.upload.import',
+                        'purchase.invoices.upload.template',
+                    ]
+                ],
+                [
+                    'title' => 'Upload Purchase Payments',
+                    'route' => 'purchase.invoices.payment_upload.index',
+                    'roles' => ['Admin Users', 'Super Admin', 'Manager', 'Assistant Section Officer (ASO)', 'Finance Team'],
+                    'api_routes' => [
+                        'purchase.invoices.payment_upload.list',
+                    ]
                 ],
 //                [
 //                    'title' => 'Product Stock',

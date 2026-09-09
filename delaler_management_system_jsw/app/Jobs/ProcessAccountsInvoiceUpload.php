@@ -347,9 +347,10 @@ class ProcessAccountsInvoiceUpload implements ShouldQueue
                             }
 
                             $rate = $pricing->price_per_mt;
-                            $gst_percent = $pricing->gst_percentage ?? 18;
+                            $gst_percent = $invoice->gst ?? 18;
+                            $taxType = $invoice->tax_type ?? 'intra';
 
-                            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent);
+                            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent, $taxType);
 
                             InvoiceDetail::create([
                                 'invoice_id' => $invoice->id,
@@ -359,6 +360,7 @@ class ProcessAccountsInvoiceUpload implements ShouldQueue
                                 'gst_amount' => $amounts['gst_amount'],
                                 'cgst_amount' => $amounts['cgst_amount'],
                                 'sgst_amount' => $amounts['sgst_amount'],
+                                'igst_amount' => $amounts['igst_amount'],
                                 'chargeable_amount' => $amounts['chargeable_amount']
                             ]);
                         }
@@ -369,6 +371,7 @@ class ProcessAccountsInvoiceUpload implements ShouldQueue
                         $invoice->total_gst_amount = $invoice->invoiceDetails()->sum('gst_amount');
                         $invoice->total_cgst_amount = $invoice->invoiceDetails()->sum('cgst_amount');
                         $invoice->total_sgst_amount = $invoice->invoiceDetails()->sum('sgst_amount');
+                        $invoice->total_igst_amount = $invoice->invoiceDetails()->sum('igst_amount');
                         $invoice->chargeable_amount = $invoice->invoiceDetails()->sum('chargeable_amount');
                         $invoice->no_of_goods = $invoice->invoiceDetails()->count();
                         $invoice->save();

@@ -12,15 +12,16 @@ $(document).ready(function () {
     reusebase.initSelect2("#ship_to", "Choose Ship To...");
     reusebase.initSelect2("#product_pricing_id", "Choose Product...");
 
-    // Calculate Rate fields when Product, Custom Price, or Quantity is changed
-    $(document).on("change keyup input", "#product_pricing_id, #custom_price, #quantity", function () {
+    // Calculate Rate fields when Product, Custom Price, Quantity, Invoice GST, or Tax Type is changed
+    $(document).on("change keyup input", "#product_pricing_id, #custom_price, #quantity, #gst, #tax_type", function () {
         try {
             let selectedOption = $("#product_pricing_id").find("option:selected");
             let customPriceInput = $("#custom_price").val();
             let price = (customPriceInput !== "" && !isNaN(customPriceInput))
                 ? parseFloat(customPriceInput)
                 : 0;
-            let gst = parseFloat(selectedOption.data("gst")) || 18;
+            let headerGst = parseFloat($("#gst").val());
+            let gst = !isNaN(headerGst) ? headerGst : (parseFloat(selectedOption.data("gst")) || 18);
             let qty = parseFloat($("#quantity").val());
             let stock = parseFloat(selectedOption.data("stock")) || 0;
 
@@ -55,7 +56,7 @@ $(document).ready(function () {
     // Handle dynamic calculation for Edit Items
     $(document).on(
         "change keyup input",
-        ".edit-product-id, .edit-price, .edit-quantity",
+        ".edit-product-id, .edit-price, .edit-quantity, #gst, #tax_type",
         function () {
             try {
                 let form = $(this).closest("form");
@@ -66,7 +67,8 @@ $(document).ready(function () {
                 let price = (customPriceInput !== "" && !isNaN(customPriceInput))
                     ? parseFloat(customPriceInput)
                     : 0;
-                let gst = parseFloat(selectedOption.data("gst")) || 18;
+                let headerGst = parseFloat($("#gst").val());
+                let gst = !isNaN(headerGst) ? headerGst : (parseFloat(selectedOption.data("gst")) || 18);
                 let qty = parseFloat(form.find(".edit-quantity").val());
                 let stock = parseFloat(selectedOption.data("stock")) || 0;
 

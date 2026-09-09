@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use App\Modules\ReuseModule;
+use App\Models\UploadTrack;
+use App\Jobs\ProcessCompanyWiseInvoiceUpload;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 
 class InvoiceController extends Controller
 {
@@ -277,6 +281,7 @@ class InvoiceController extends Controller
                 'user_invoice_no' => 'nullable|string|max:255',
                 'buyer_id' => 'required|exists:dealer_companies,id',
                 'ship_to' => 'required|exists:dealer_companies,id',
+                'tax_type' => 'nullable|in:intra,inter',
                 'gst' => 'required|numeric|min:0',
                 'invoice_generate_date' => 'nullable|date',
                 'vehicle_no' => 'nullable|string|max:255',
@@ -293,14 +298,18 @@ class InvoiceController extends Controller
             }
 
             $userInvoiceNo = $request->filled('user_invoice_no') ? trim($request->user_invoice_no) : null;
+            $taxType = $request->tax_type ?? 'intra';
+            $isInterState = ($taxType === 'inter');
 
             $data = [
                 'user_invoice_no' => $userInvoiceNo,
                 'buyer_id' => $request->buyer_id,
                 'ship_to' => $request->ship_to,
+                'tax_type' => $taxType,
                 'gst' => $request->gst,
-                'cgst' => $request->gst / 2,
-                'sgst' => $request->gst / 2,
+                'cgst' => $isInterState ? 0 : ($request->gst / 2),
+                'sgst' => $isInterState ? 0 : ($request->gst / 2),
+                'igst' => $isInterState ? $request->gst : 0,
                 'invoice_generate_date' => $request->invoice_generate_date ?? now()->format('Y-m-d'),
                 'vehicle_no' => $request->vehicle_no,
                 'delivery_note' => $request->delivery_note,
@@ -312,6 +321,45 @@ class InvoiceController extends Controller
 
                 if ($invoice->invoice_status == 1) {
                     return response()->json(['success' => false, 'message' => 'Cannot update a finalized invoice.']);
+                }
+
+                // Recalculate existing items if GST percentage or tax type is updated
+                $details = $invoice->invoiceDetails;
+                if ($details && $details->count() > 0) {
+                    foreach ($details as $detail) {
+                        $rate = (float)($detail->custom_price ?? ($detail->productPricing ? $detail->productPricing->price_per_mt : 0));
+                        $quantity = (float)$detail->quantity;
+                        $itemAmounts = ReuseModule::calculateItemAmounts($rate, $quantity, (float)$request->gst, $taxType);
+
+                        $detail->update([
+                            'total_amount' => $itemAmounts['total_amount'],
+                            'gst_amount' => $itemAmounts['gst_amount'],
+                            'cgst_amount' => $itemAmounts['cgst_amount'],
+                            'sgst_amount' => $itemAmounts['sgst_amount'],
+                            'igst_amount' => $itemAmounts['igst_amount'],
+                            'chargeable_amount' => $itemAmounts['chargeable_amount']
+                        ]);
+                    }
+
+                    $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
+                    $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
+                    $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                    $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
+                    $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
+
+                    $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
+                    $finalRoundedAmount = round($unroundedTotal);
+                    $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
+
+                    $data['total_quantity'] = $invoice->invoiceDetails()->sum('quantity');
+                    $data['total_amount'] = $totAmount;
+                    $data['total_gst_amount'] = $totGst;
+                    $data['total_cgst_amount'] = $totCgst;
+                    $data['total_sgst_amount'] = $totSgst;
+                    $data['total_igst_amount'] = $totIgst;
+                    $data['round_of'] = $roundOff;
+                    $data['chargeable_amount'] = $finalRoundedAmount;
+                    $data['no_of_goods'] = $invoice->invoiceDetails()->count();
                 }
 
                 $invoice->update($data);
@@ -453,9 +501,10 @@ class InvoiceController extends Controller
                 $rate = (float)$productPricing->price_per_mt;
             }
             $quantity = $request->quantity;
-            $gst_percent = $product->gst ?? $productPricing->gst_percentage ?? 18;
+            $gst_percent = (float)($invoice->gst ?? 18);
+            $taxType = $invoice->tax_type ?? 'intra';
 
-            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent);
+            $amounts = ReuseModule::calculateItemAmounts($rate, $quantity, $gst_percent, $taxType);
 
             DB::transaction(function () use ($invoice, $invoice_detail_id, $productPricing, $rate, $quantity, $amounts) {
 
@@ -476,6 +525,7 @@ class InvoiceController extends Controller
                     'gst_amount' => $amounts['gst_amount'],
                     'cgst_amount' => $amounts['cgst_amount'],
                     'sgst_amount' => $amounts['sgst_amount'],
+                    'igst_amount' => $amounts['igst_amount'],
                     'chargeable_amount' => $amounts['chargeable_amount']
                 ]);
 
@@ -485,9 +535,10 @@ class InvoiceController extends Controller
                 $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
                 $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
                 $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
                 $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
 
-                $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
                 $finalRoundedAmount = round($unroundedTotal);
                 $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
 
@@ -496,6 +547,7 @@ class InvoiceController extends Controller
                 $invoice->total_gst_amount = $totGst;
                 $invoice->total_cgst_amount = $totCgst;
                 $invoice->total_sgst_amount = $totSgst;
+                $invoice->total_igst_amount = $totIgst;
                 $invoice->round_of = $roundOff;
                 $invoice->chargeable_amount = $finalRoundedAmount;
                 $invoice->no_of_goods = $invoice->invoiceDetails()->count();
@@ -554,9 +606,10 @@ class InvoiceController extends Controller
                 $totAmount = (float)$invoice->invoiceDetails()->sum('total_amount');
                 $totCgst = (float)$invoice->invoiceDetails()->sum('cgst_amount');
                 $totSgst = (float)$invoice->invoiceDetails()->sum('sgst_amount');
+                $totIgst = (float)$invoice->invoiceDetails()->sum('igst_amount');
                 $totGst = (float)$invoice->invoiceDetails()->sum('gst_amount');
 
-                $unroundedTotal = $totAmount + $totCgst + $totSgst;
+                $unroundedTotal = $totAmount + $totCgst + $totSgst + $totIgst;
                 $finalRoundedAmount = round($unroundedTotal);
                 $roundOff = round($finalRoundedAmount - $unroundedTotal, 2);
 
@@ -565,6 +618,7 @@ class InvoiceController extends Controller
                 $invoice->total_gst_amount = $totGst;
                 $invoice->total_cgst_amount = $totCgst;
                 $invoice->total_sgst_amount = $totSgst;
+                $invoice->total_igst_amount = $totIgst;
                 $invoice->round_of = $roundOff;
                 $invoice->chargeable_amount = $finalRoundedAmount;
                 $invoice->no_of_goods = $invoice->invoiceDetails()->count();
@@ -636,7 +690,7 @@ class InvoiceController extends Controller
                     $invoice->invoice_generate_date = now()->format('Y-m-d');
                 }
                 $generateDate = \Carbon\Carbon::parse($invoice->invoice_generate_date)->format('Y-m-d');
-                $invoice->due_date = date('Y-m-d', strtotime('+21 days', strtotime($generateDate)));
+                $invoice->due_date = date('Y-m-d', strtotime('+30 days', strtotime($generateDate)));
                 $invoice->save();
 
                 // Decrease product stock & record product-wise sale quantity in DailyStockReport
@@ -945,4 +999,138 @@ class InvoiceController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to delete invoice.'], 500);
         }
     }
+
+    /**
+     * Display Company-Wise Invoice Upload submodule view.
+     */
+    public function companyWiseUploadIndex()
+    {
+        return view('accounts.invoices.company_wise_upload');
+    }
+
+    /**
+     * List recent Company-Wise Invoice Upload tracks via AJAX.
+     */
+    public function companyWiseUploadList(Request $request)
+    {
+        try {
+            $query = UploadTrack::where('upload_type', 'accounts_invoices')
+                ->with('user');
+
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where('file_name', 'like', "%{$search}%");
+            }
+
+            $page = $request->input('page', 1);
+            $tracks = $query->latest()->paginate(10, ['*'], 'page', $page);
+
+            $html = view('accounts.invoices.partials.company_wise_upload_table', compact('tracks'))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Company-Wise Invoice Upload Track List Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while loading the upload tracking list.',
+                'html' => '<div class="alert alert-danger mx-3 my-3">Failed to load data. Please try again.</div>'
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle Company-Wise Invoices Upload import.
+     */
+    public function importCompanyWiseInvoices(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first()
+                ], 200);
+            }
+
+            $file = $request->file('excel_file');
+            $originalName = $file->getClientOriginalName();
+
+            // Store the file securely
+            $path = $file->storeAs('accounts_uploads', time() . '_company_wise_' . $originalName, 'local');
+
+            $track = UploadTrack::create([
+                'user_id' => Auth::id(),
+                'company_id' => session('active_company_id'),
+                'role_user_company_id' => session('active_map_id'),
+                'file_name' => $originalName,
+                'status' => 'pending',
+                'upload_type' => 'accounts_invoices'
+            ]);
+
+            // Dispatch Company-Wise Invoice Upload Queue Job
+            ProcessCompanyWiseInvoiceUpload::dispatch($track->id, $path);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Company-Wise Invoice file uploaded successfully. Processing will continue in the background.'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Company-Wise Invoice File Upload Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while uploading the file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download Template for Company-Wise Invoice Upload.
+     */
+    public function downloadCompanyWiseInvoiceTemplate()
+    {
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=company_wise_invoice_upload_template.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $columns = [
+            'Dealer GST No',
+            'User Invoice No',
+            'Invoice Date',
+            'Due Date',
+            'Product Name',
+            'Quantity',
+            'Rate (Without GST)',
+            'GST Percentage',
+            'GST Type (intra/inter)'
+        ];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            $dueDate = date('Y-m-d', strtotime('+30 days'));
+
+            // Sample Row 1 (Product invoice item 1)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), $dueDate, 'JSW TMT Rebar 12mm', '10', '45000.00', '18.00', 'intra']);
+            // Sample Row 2 (Grouped with Row 1 for product item 2)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0001', date('Y-m-d'), $dueDate, 'JSW TMT Rebar 16mm', '5', '48000.00', '18.00', 'intra']);
+            // Sample Row 3 (Another unique user input invoice number)
+            fputcsv($file, ['27AAAAA0000A1Z5', 'INV-2026-0002', date('Y-m-d'), $dueDate, 'JSW Structural Steel', '20', '52000.00', '18.00', 'inter']);
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
 }
+

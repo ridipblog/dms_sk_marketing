@@ -15,6 +15,7 @@ class InvoiceDetail extends Model
         'custom_price',
         'cgst_amount',
         'sgst_amount',
+        'igst_amount',
         'gst_amount',
         'total_amount',
         'chargeable_amount',

@@ -84,6 +84,7 @@ class PaymentTrackController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('invoice_no', 'like', "%{$search}%")
+                        ->orWhere('user_invoice_no', 'like', "%{$search}%")
                         ->orWhereHas('buyer.dealer', function ($sq) use ($search) {
                             $sq->where('dealer_name', 'like', "%{$search}%");
                         });

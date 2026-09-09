@@ -78,14 +78,34 @@ class DebitNoteController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('reason', 'like', "%{$search}%")
                         ->orWhereHas('paymentTrack.invoice', function ($sq) use ($search) {
-                            $sq->where('invoice_no', 'like', "%{$search}%");
+                            $sq->where('invoice_no', 'like', "%{$search}%")
+                                ->orWhere('user_invoice_no', 'like', "%{$search}%");
                         });
                 });
             }
 
+            // Optimized single SQL query for count, amount sum, base sum, and gst sum
+            $totals = (clone $query)->selectRaw('
+                COUNT(*) as total_count,
+                COALESCE(SUM(amount), 0) as total_amount,
+                COALESCE(SUM(base_amount), 0) as total_base_amount,
+                COALESCE(SUM(gst_amount), 0) as total_gst_amount
+            ')->first();
+
+            $totalCount = (int)($totals->total_count ?? 0);
+            $totalAmount = (float)($totals->total_amount ?? 0);
+            $totalBaseAmount = (float)($totals->total_base_amount ?? 0);
+            $totalGstAmount = (float)($totals->total_gst_amount ?? 0);
+
             $debitNotes = $query->orderBy('id', 'desc')->paginate(10);
 
-            $html = view('accounts.debit_notes.partials.list', compact('debitNotes'))->render();
+            $html = view('accounts.debit_notes.partials.list', compact(
+                'debitNotes',
+                'totalAmount',
+                'totalBaseAmount',
+                'totalGstAmount',
+                'totalCount'
+            ))->render();
 
             return response()->json([
                 'success' => true,

@@ -17,6 +17,7 @@ class PurchaseInvoiceDetail extends Model
         'total_amount',
         'cgst_amount',
         'sgst_amount',
+        'igst_amount',
         'gst_amount',
         'chargeable_amount'
     ];

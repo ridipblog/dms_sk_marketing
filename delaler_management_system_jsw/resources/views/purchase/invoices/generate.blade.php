@@ -41,7 +41,7 @@
                             <input type="hidden" name="purchase_id" id="purchase_id"
                                 value="{{ isset($purchase) ? Crypt::encryptString($purchase->id) : '' }}">
                             <div class="row">
-                                <div class="col-12 col-md-4 mb-3">
+                                <div class="col-12 col-md-3 mb-3">
                                     <label for="supplier_id" class="form-label fw-bold">Select Supplier <span class="text-danger">*</span></label>
                                     <select class="form-select select2" id="supplier_id" name="supplier_id" required>
                                         <option value="">Choose Supplier...</option>
@@ -54,13 +54,19 @@
                                     </select>
                                 </div>
 
-                                <div class="col-12 col-md-4 mb-3">
+                                <div class="col-12 col-md-3 mb-3">
+                                    <label for="user_invoice_no" class="form-label fw-bold">User Manual Invoice No</label>
+                                    <input type="text" class="form-control" id="user_invoice_no" name="user_invoice_no"
+                                        value="{{ isset($purchase) ? $purchase->user_invoice_no : '' }}" placeholder="Enter Manual Invoice No">
+                                </div>
+
+                                <div class="col-12 col-md-3 mb-3">
                                     <label for="purchase_date" class="form-label fw-bold">Purchase Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" id="purchase_date" name="purchase_date"
                                         value="{{ isset($purchase) ? $purchase->purchase_date->format('Y-m-d') : date('Y-m-d') }}" required>
                                 </div>
 
-                                <div class="col-12 col-md-4 mb-3">
+                                <div class="col-12 col-md-3 mb-3">
                                     <label for="due_date" class="form-label fw-bold">Payment Due Date</label>
                                     <input type="date" class="form-control" id="due_date" name="due_date"
                                         value="{{ isset($purchase) && $purchase->due_date ? $purchase->due_date->format('Y-m-d') : '' }}">

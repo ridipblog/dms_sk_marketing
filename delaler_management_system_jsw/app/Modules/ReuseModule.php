@@ -159,9 +159,17 @@ class ReuseModule
      */
     public static function generateInvoiceNumber()
     {
-        $latestInvoice = Invoice::lockForUpdate()->orderBy('id', 'desc')->first();
+        $latestInvoice = Invoice::withTrashed()->lockForUpdate()->orderBy('id', 'desc')->first();
         $nextId = $latestInvoice ? $latestInvoice->id + 1 : 1;
-        return 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+
+        $invoiceNo = 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+
+        while (Invoice::withTrashed()->where('invoice_no', $invoiceNo)->exists()) {
+            $nextId++;
+            $invoiceNo = 'INV-' . date('Ym') . '-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+        }
+
+        return $invoiceNo;
     }
 
     /**
@@ -185,12 +193,21 @@ class ReuseModule
      * @param float $gstPercent
      * @return array
      */
-    public static function calculateItemAmounts($rate, $quantity, $gstPercent = 18.00)
+    public static function calculateItemAmounts($rate, $quantity, $gstPercent = 18.00, $taxType = 'intra')
     {
         $totalAmount = $rate * $quantity;
         $gstAmount = $totalAmount * ($gstPercent / 100);
-        $cgstAmount = $gstAmount / 2;
-        $sgstAmount = $gstAmount / 2;
+
+        if ($taxType === 'inter' || $taxType === 'igst') {
+            $cgstAmount = 0;
+            $sgstAmount = 0;
+            $igstAmount = $gstAmount;
+        } else {
+            $cgstAmount = $gstAmount / 2;
+            $sgstAmount = $gstAmount / 2;
+            $igstAmount = 0;
+        }
+
         $chargeableAmount = $totalAmount + $gstAmount;
 
         return [
@@ -198,6 +215,7 @@ class ReuseModule
             'gst_amount' => round($gstAmount, 2),
             'cgst_amount' => round($cgstAmount, 2),
             'sgst_amount' => round($sgstAmount, 2),
+            'igst_amount' => round($igstAmount, 2),
             'chargeable_amount' => round($chargeableAmount, 2),
         ];
     }

@@ -50,6 +50,7 @@ class PurchaseInvoiceController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('invoice_no', 'like', "%{$search}%")
+                        ->orWhere('user_invoice_no', 'like', "%{$search}%")
                         ->orWhereHas('supplier', function ($sq) use ($search) {
                             $sq->where('name', 'like', "%{$search}%");
                         });
@@ -138,6 +139,7 @@ class PurchaseInvoiceController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'supplier_id' => 'required|exists:suppliers,id',
+                'user_invoice_no' => 'nullable|string|max:255',
                 'purchase_date' => 'required|date',
                 'due_date' => 'nullable|date|after_or_equal:purchase_date',
                 'purchase_id' => 'nullable|exists:purchase_invoices,id',
@@ -155,6 +157,7 @@ class PurchaseInvoiceController extends Controller
             $data = [
                 'supplier_id' => $request->supplier_id,
                 'company_id' => $companyId,
+                'user_invoice_no' => $request->user_invoice_no,
                 'purchase_date' => $request->purchase_date,
                 'due_date' => $request->due_date,
             ];
@@ -490,7 +493,7 @@ class PurchaseInvoiceController extends Controller
             $companyId = session('active_company_id');
             $purchase = PurchaseInvoice::where('company_id', $companyId)
                 ->where('id', $decryptedId)
-                ->with(['supplier', 'purchaseInvoiceDetails.product', 'purchaseInvoicePayment', 'purchasePaymentTracks'])
+                ->with(['supplier', 'company', 'purchaseInvoiceDetails.product', 'purchaseInvoicePayment', 'purchasePaymentTracks'])
                 ->firstOrFail();
 
             return view('purchase.invoices.view', compact('purchase'));
